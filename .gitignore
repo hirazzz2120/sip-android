@@ -1,15 +1,24 @@
+# IDE and local machine files
 *.iml
-.gradle
+.DS_Store
+.gradle/
+.kotlin/
+local.properties
 /local.properties
+
+# Android Studio local project state
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-.DS_Store
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/misc.xml
+
+# Build outputs
 /build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
