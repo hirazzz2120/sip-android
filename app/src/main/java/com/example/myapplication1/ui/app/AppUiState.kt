@@ -2,11 +2,14 @@ package com.example.myapplication1.ui.app
 
 import com.example.myapplication1.domain.model.AdminAlert
 import com.example.myapplication1.domain.model.AdminMetric
+import com.example.myapplication1.domain.model.BackendEndpoint
 import com.example.myapplication1.domain.model.CallSession
 import com.example.myapplication1.domain.model.ChatMessage
 import com.example.myapplication1.domain.model.Contact
 import com.example.myapplication1.domain.model.ConversationSummary
+import com.example.myapplication1.domain.model.DeliveryCheckpoint
 import com.example.myapplication1.domain.model.SystemProfile
+import com.example.myapplication1.domain.model.WorkspaceUpdate
 
 data class AppUiState(
     val isAuthenticated: Boolean = false,
@@ -16,6 +19,9 @@ data class AppUiState(
     val calls: List<CallSession> = emptyList(),
     val metrics: List<AdminMetric> = emptyList(),
     val alerts: List<AdminAlert> = emptyList(),
+    val checkpoints: List<DeliveryCheckpoint> = emptyList(),
+    val backendEndpoints: List<BackendEndpoint> = emptyList(),
+    val workspaceUpdates: List<WorkspaceUpdate> = emptyList(),
     val messages: Map<String, List<ChatMessage>> = emptyMap(),
     val messageDraft: String = "",
     val transportStatus: String = "本地模拟传输未启动",

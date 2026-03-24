@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import com.example.myapplication1.domain.model.Contact
 import com.example.myapplication1.domain.model.ContactStatus
 import com.example.myapplication1.ui.app.AppUiState
+import com.example.myapplication1.ui.components.DetailLine
+import com.example.myapplication1.ui.components.EmptyStateCard
 import com.example.myapplication1.ui.components.InitialBadge
+import com.example.myapplication1.ui.components.ReadinessChip
 import com.example.myapplication1.ui.components.StatusChip
 import com.example.myapplication1.ui.components.SummaryStatCard
 import com.example.myapplication1.ui.theme.Aqua
@@ -41,7 +44,7 @@ fun ContactsScreen(state: AppUiState) {
         item {
             SectionHeader(
                 title = "联系人",
-                subtitle = "先把目录、标签和入口设计完整，后续再接真实在线状态和搜索。"
+                subtitle = "联系人页已经按后端联调场景拆成目录、能力标签、响应窗口和快速动作，不再只是静态通讯录。"
             )
         }
         item {
@@ -50,7 +53,7 @@ fun ContactsScreen(state: AppUiState) {
                     SummaryStatCard(
                         title = "在线",
                         value = onlineCount.toString(),
-                        caption = "可直接发起消息或通话",
+                        caption = "可直接发消息或发起通话",
                         accent = Aqua
                     )
                 }
@@ -58,7 +61,7 @@ fun ContactsScreen(state: AppUiState) {
                     SummaryStatCard(
                         title = "忙碌",
                         value = busyCount.toString(),
-                        caption = "适合显示免打扰或会议中状态",
+                        caption = "适合显示免打扰和会议状态",
                         accent = Coral
                     )
                 }
@@ -66,7 +69,7 @@ fun ContactsScreen(state: AppUiState) {
                     SummaryStatCard(
                         title = "离线",
                         value = offlineCount.toString(),
-                        caption = "后续可接离线消息与推送通知",
+                        caption = "后续可接离线消息和推送",
                         accent = Steel
                     )
                 }
@@ -74,13 +77,21 @@ fun ContactsScreen(state: AppUiState) {
         }
         item {
             HighlightPanel(
-                title = "目录策略",
+                title = "后端需要补的联系人能力",
                 lines = listOf(
-                    "支持按部门、角色、能力标签组织联系人",
-                    "支持后续增加搜索、置顶、最近联系",
-                    "PC 互通节点与媒体中继也作为联系人展示"
+                    "支持按部门、标签、最近互动和在线状态联合筛选",
+                    "返回联系人支持的能力集，例如 SIP、媒体、桥接、审计",
+                    "补充头像、备注名、最近活跃时间和权限范围"
                 )
             )
+        }
+        item {
+            if (state.contacts.isEmpty()) {
+                EmptyStateCard(
+                    title = "暂无联系人",
+                    detail = "后端返回联系人列表后，这里会展示分组、标签和快速操作入口。"
+                )
+            }
         }
         items(state.contacts, key = Contact::id) { contact ->
             ContactCard(contact = contact)
@@ -129,14 +140,30 @@ private fun ContactCard(contact: Contact) {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusChip(text = contact.capability, accent = SkyBlue)
-                StatusChip(
-                    text = if (contact.status == ContactStatus.OFFLINE) "离线入口" else "即时联系",
-                    accent = if (contact.status == ContactStatus.OFFLINE) Steel else Aqua
+                ReadinessChip(
+                    status = when (contact.status) {
+                        ContactStatus.ONLINE -> com.example.myapplication1.domain.model.ReadinessStatus.READY
+                        ContactStatus.BUSY -> com.example.myapplication1.domain.model.ReadinessStatus.IN_PROGRESS
+                        ContactStatus.OFFLINE -> com.example.myapplication1.domain.model.ReadinessStatus.BLOCKED
+                    }
                 )
             }
-            Text(
-                text = "建议动作：发消息、发起单人 SIP 通话、拉入群聊、查看最近联调记录。",
-                style = MaterialTheme.typography.bodyMedium
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(contact.roleTags) { tag ->
+                    StatusChip(
+                        text = tag,
+                        accent = if (contact.status == ContactStatus.OFFLINE) Steel else Aqua
+                    )
+                }
+            }
+            DetailLine(label = "建议响应窗口", value = contact.responseWindow)
+            DetailLine(
+                label = "建议动作",
+                value = if (contact.status == ContactStatus.OFFLINE) {
+                    "留言、查看最近记录、等待上线"
+                } else {
+                    "发消息、单呼、拉群、确认接口字段"
+                }
             )
         }
     }

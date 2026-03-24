@@ -38,6 +38,9 @@ class AppViewModel(
             calls = repository.loadCalls(),
             metrics = repository.loadMetrics(),
             alerts = repository.loadAlerts(),
+            checkpoints = repository.loadCheckpoints(),
+            backendEndpoints = repository.loadBackendEndpoints(),
+            workspaceUpdates = repository.loadWorkspaceUpdates(),
             messages = repository.loadMessages(),
             transportStatus = "本地模拟传输已连接，可替换为真实 WebSocket/HTTP 服务。",
             selectedConversationId = conversations.firstOrNull()?.id

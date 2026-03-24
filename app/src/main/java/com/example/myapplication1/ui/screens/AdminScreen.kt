@@ -16,14 +16,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication1.domain.model.AdminAlert
 import com.example.myapplication1.domain.model.AdminMetric
+import com.example.myapplication1.domain.model.AlertSeverity
 import com.example.myapplication1.domain.model.PcInteropContract
 import com.example.myapplication1.ui.app.AppUiState
 import com.example.myapplication1.ui.components.AccentPanel
+import com.example.myapplication1.ui.components.BackendEndpointCard
+import com.example.myapplication1.ui.components.ReadinessChip
 import com.example.myapplication1.ui.components.SignalMeter
 import com.example.myapplication1.ui.components.SummaryStatCard
 import com.example.myapplication1.ui.theme.Aqua
 import com.example.myapplication1.ui.theme.Coral
 import com.example.myapplication1.ui.theme.SkyBlue
+import com.example.myapplication1.ui.theme.Steel
 
 @Composable
 fun AdminScreen(state: AppUiState) {
@@ -34,7 +38,7 @@ fun AdminScreen(state: AppUiState) {
         item {
             SectionHeader(
                 title = "后台管理",
-                subtitle = "把统计、协议、告警和审计入口做成同一套展示语言，便于最终答辩演示。"
+                subtitle = "这一页已经整理成后端可直接对照的交付面板，覆盖指标、接口、协议和告警四个面。"
             )
         }
         item {
@@ -43,7 +47,7 @@ fun AdminScreen(state: AppUiState) {
                     SummaryStatCard(
                         title = metric.title,
                         value = metric.value,
-                        caption = metric.insight,
+                        caption = "${metric.insight} · ${metric.target}",
                         accent = when (metric.title) {
                             "在线用户" -> Aqua
                             "今日消息量" -> SkyBlue
@@ -69,22 +73,50 @@ fun AdminScreen(state: AppUiState) {
                     )
                     SignalMeter(label = "消息投递稳定度", progress = 0.81f, accent = SkyBlue)
                     SignalMeter(label = "SIP 注册准备度", progress = 0.56f, accent = Coral)
-                    SignalMeter(label = "PC 互通协议完成度", progress = 0.67f, accent = Aqua)
+                    SignalMeter(label = "PC 协议完成度", progress = 0.67f, accent = Aqua)
                 }
             }
         }
         item {
             AccentPanel(
                 title = "服务端建设范围",
-                subtitle = "这部分用于课程设计答辩时解释系统后台要承担的职责。",
+                subtitle = "这部分用于课程设计答辩时解释后台要承担的职责。",
                 lines = listOf(
-                    "用户与群组生命周期管理",
-                    "消息审计与投递统计",
-                    "通话详单和丢包趋势",
-                    "按用户、会话、时间和媒体类型检索"
+                    "登录、身份认证、SIP 启动信息分发",
+                    "消息投递、已读回执、离线消息和媒体上传下载",
+                    "通话详单、会议控制、告警和审计检索",
+                    "PC / Android 客户端统一协议与错误码"
                 ),
                 accent = Coral
             )
+        }
+        item {
+            HighlightPanel(
+                title = "交付检查线",
+                lines = state.checkpoints.map { checkpoint ->
+                    "${checkpoint.title} · ${checkpoint.owner} · ${checkpoint.status}"
+                }
+            )
+        }
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "后端接口清单",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    state.backendEndpoints.forEach { endpoint ->
+                        BackendEndpointCard(endpoint = endpoint)
+                    }
+                }
+            }
         }
         item {
             Card(
@@ -149,9 +181,29 @@ private fun AlertCard(alert: AdminAlert) {
                 text = alert.title,
                 style = MaterialTheme.typography.titleMedium
             )
+            ReadinessChip(
+                status = when (alert.severity) {
+                    AlertSeverity.INFO -> com.example.myapplication1.domain.model.ReadinessStatus.READY
+                    AlertSeverity.WARNING -> com.example.myapplication1.domain.model.ReadinessStatus.IN_PROGRESS
+                    AlertSeverity.CRITICAL -> com.example.myapplication1.domain.model.ReadinessStatus.BLOCKED
+                }
+            )
             Text(
                 text = alert.detail,
                 style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = when (alert.severity) {
+                    AlertSeverity.INFO -> "影响级别：信息"
+                    AlertSeverity.WARNING -> "影响级别：需尽快跟进"
+                    AlertSeverity.CRITICAL -> "影响级别：阻塞联调"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = when (alert.severity) {
+                    AlertSeverity.INFO -> Steel
+                    AlertSeverity.WARNING -> SkyBlue
+                    AlertSeverity.CRITICAL -> Coral
+                }
             )
         }
     }
