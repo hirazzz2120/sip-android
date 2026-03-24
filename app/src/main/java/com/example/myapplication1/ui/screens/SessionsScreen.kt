@@ -1,6 +1,5 @@
 package com.example.myapplication1.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -25,32 +23,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.myapplication1.domain.model.AuthorRole
 import com.example.myapplication1.domain.model.ChatMessage
 import com.example.myapplication1.domain.model.ConversationSummary
-import com.example.myapplication1.domain.model.DeliveryCheckpoint
 import com.example.myapplication1.domain.model.MessageDeliveryStatus
 import com.example.myapplication1.domain.model.MessageKind
 import com.example.myapplication1.ui.app.AppUiState
-import com.example.myapplication1.ui.components.BackendEndpointCard
-import com.example.myapplication1.ui.components.DetailLine
 import com.example.myapplication1.ui.components.EmptyStateCard
-import com.example.myapplication1.ui.components.FillPanel
 import com.example.myapplication1.ui.components.InitialBadge
-import com.example.myapplication1.ui.components.ReadinessChip
 import com.example.myapplication1.ui.components.StatusChip
 import com.example.myapplication1.ui.components.SummaryStatCard
-import com.example.myapplication1.ui.components.TimelineCard
-import com.example.myapplication1.ui.components.accent
 import com.example.myapplication1.ui.theme.Aqua
 import com.example.myapplication1.ui.theme.Coral
 import com.example.myapplication1.ui.theme.SkyBlue
-import com.example.myapplication1.ui.theme.SlateBlue
-import com.example.myapplication1.ui.theme.Steel
 
 @Composable
 fun SessionsScreen(
@@ -60,69 +48,56 @@ fun SessionsScreen(
     onSendTextMessage: () -> Unit,
     onSendMediaMessage: (MessageKind) -> Unit
 ) {
-    val selectedConversation = state.selectedConversation
-
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             SectionHeader(
-                title = "消息会话",
-                subtitle = "前端已补成后端可联调的工作台：包含媒体卡片、群聊信息、状态回执和接口接入提示。"
+                title = "消息",
+                subtitle = "会话、聊天记录和输入区集中在一个清晰页面里。"
             )
-        }
-        item {
-            WorkspaceHero(state = state)
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
                     SummaryStatCard(
                         title = "当前会话",
-                        value = selectedConversation?.title ?: "未选择",
-                        caption = "当前环境：${state.profile?.environmentLabel ?: "未连接"}",
+                        value = state.selectedConversation?.title ?: "未选择",
+                        caption = state.transportStatus,
                         accent = SkyBlue
                     )
                 }
                 item {
                     SummaryStatCard(
-                        title = "消息总数",
+                        title = "消息数量",
                         value = state.selectedMessages.size.toString(),
-                        caption = "支持文本、图片、语音、视频四类卡片",
+                        caption = "支持文本、图片、语音、视频",
                         accent = Aqua
                     )
                 }
                 item {
                     SummaryStatCard(
-                        title = "交付检查项",
-                        value = state.checkpoints.count { it.status.name == "READY" }.toString(),
-                        caption = "等待后端按接口清单逐项替换",
+                        title = "未读",
+                        value = state.conversations.sumOf { it.unreadCount }.toString(),
+                        caption = "最近会话提醒",
                         accent = Coral
                     )
                 }
             }
         }
         item {
-            DeliveryStrip(checkpoints = state.checkpoints.take(4))
-        }
-        item {
-            if (selectedConversation == null) {
+            if (state.selectedConversation == null) {
                 EmptyStateCard(
-                    title = "尚未选择会话",
-                    detail = "选中一个会话后，这里会显示群聊路由、成员规模、媒体能力和后端接入重点。"
+                    title = "请选择一个会话",
+                    detail = "从下方列表中选择联系人或群聊后开始聊天。"
                 )
             } else {
-                SelectedConversationPanel(conversation = selectedConversation)
+                SelectedConversationPanel(conversation = state.selectedConversation)
             }
         }
         item {
-            if (selectedConversation != null) {
-                ConversationHandoffPanel(state = state, conversation = selectedConversation)
-            }
-        }
-        item {
-            if (selectedConversation != null) {
+            if (state.selectedConversation != null) {
                 MessageBoard(
                     draft = state.messageDraft,
                     messages = state.selectedMessages,
@@ -139,23 +114,7 @@ fun SessionsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "最近联调动态",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                StatusChip(text = "前端壳已就绪", accent = Aqua)
-            }
-        }
-        items(state.workspaceUpdates.take(2), key = { it.title }) { update ->
-            TimelineCard(update = update)
-        }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "会话列表",
+                    text = "最近会话",
                     style = MaterialTheme.typography.titleLarge
                 )
                 StatusChip(
@@ -175,100 +134,11 @@ fun SessionsScreen(
 }
 
 @Composable
-private fun WorkspaceHero(state: AppUiState) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(30.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            SlateBlue.copy(alpha = 0.98f),
-                            SkyBlue.copy(alpha = 0.94f),
-                            Aqua.copy(alpha = 0.9f)
-                        )
-                    )
-                )
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusChip(text = state.profile?.releaseStage ?: "工作台未初始化", accent = Coral)
-                StatusChip(text = state.profile?.peerClient ?: "PC 对端", accent = Color.White)
-            }
-            Text(
-                text = "联调消息工作台",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-            Text(
-                text = "网关 ${state.profile?.gateway ?: "未连接"} · API ${state.profile?.backendBaseUrl ?: "未配置"}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-            Text(
-                text = "传输状态：${state.transportStatus}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-        }
-    }
-}
-
-@Composable
-private fun DeliveryStrip(checkpoints: List<DeliveryCheckpoint>) {
-    if (checkpoints.isEmpty()) {
-        EmptyStateCard(
-            title = "暂无交付检查项",
-            detail = "建议按登录、会话、消息、通话、管理五个域整理对接清单。"
-        )
-        return
-    }
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items(checkpoints, key = { it.title }) { checkpoint ->
-            Card(
-                modifier = Modifier.width(250.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = checkpoint.title,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        ReadinessChip(status = checkpoint.status)
-                    }
-                    Text(
-                        text = checkpoint.owner,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = checkpoint.status.accent()
-                    )
-                    Text(
-                        text = checkpoint.detail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SelectedConversationPanel(conversation: ConversationSummary) {
+private fun SelectedConversationPanel(conversation: ConversationSummary?) {
+    if (conversation == null) return
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        shape = RoundedCornerShape(26.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Row(
             modifier = Modifier
@@ -279,68 +149,34 @@ private fun SelectedConversationPanel(conversation: ConversationSummary) {
         ) {
             InitialBadge(
                 text = conversation.title.take(1),
-                accent = conversation.integrationStatus.accent()
+                accent = if (conversation.isGroup) Coral else SkyBlue
             )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = conversation.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    ReadinessChip(status = conversation.integrationStatus)
-                }
+                Text(
+                    text = conversation.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatusChip(
                         text = if (conversation.isGroup) "群聊" else "单聊",
                         accent = Aqua
                     )
-                    StatusChip(
-                        text = "${conversation.memberCount} 人",
-                        accent = Coral
-                    )
-                    StatusChip(
-                        text = conversation.kind.toChineseLabel(),
-                        accent = SkyBlue
-                    )
+                    if (conversation.memberCount > 1) {
+                        StatusChip(
+                            text = "${conversation.memberCount} 人",
+                            accent = Coral
+                        )
+                    }
                 }
                 Text(
-                    text = "最近一条：${conversation.preview}",
+                    text = conversation.preview,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ConversationHandoffPanel(
-    state: AppUiState,
-    conversation: ConversationSummary
-) {
-    FillPanel(accent = conversation.integrationStatus.accent()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "后端接入信息",
-                style = MaterialTheme.typography.titleLarge
-            )
-            DetailLine(label = "会话路由键", value = conversation.routingKey)
-            DetailLine(label = "会话模式", value = if (conversation.isGroup) "群聊 / 支持成员管理" else "单聊 / 点对点")
-            DetailLine(label = "消息种类", value = "TEXT / IMAGE / AUDIO / VIDEO")
-            DetailLine(label = "建议接口", value = "/conversations, /messages/send, /messages/history")
-            if (conversation.isGroup) {
-                DetailLine(label = "群聊补充", value = "需要 groupId、role、muteState、memberOrder")
-            }
-            state.backendEndpoints.take(2).forEach { endpoint ->
-                BackendEndpointCard(endpoint = endpoint)
             }
         }
     }
@@ -357,7 +193,7 @@ private fun MessageBoard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(30.dp)
+        shape = RoundedCornerShape(28.dp)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -368,23 +204,16 @@ private fun MessageBoard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "聊天窗口",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = "协议字段：conversationId / kind / content / timestamp / senderId / messageId",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                StatusChip(text = "媒体卡片已补齐", accent = Coral)
+                Text(
+                    text = "聊天记录",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                StatusChip(text = "在线", accent = SkyBlue)
             }
             if (messages.isEmpty()) {
                 EmptyStateCard(
-                    title = "当前没有消息",
-                    detail = "先发送一条文本或媒体消息，验证气泡样式、状态变更和会话摘要更新。"
+                    title = "还没有消息",
+                    detail = "发送一条消息后，这里会显示聊天内容。"
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -399,27 +228,23 @@ private fun MessageBoard(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 shape = RoundedCornerShape(22.dp),
-                label = { Text("输入文本消息") },
-                placeholder = { Text("例如：消息页已完成媒体卡片，等待后端返回 attachmentUrl") }
+                label = { Text("输入消息") },
+                placeholder = { Text("说点什么") }
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "媒体快捷发送",
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Button(onClick = onSendTextMessage) {
-                    Text("发送文本")
-                }
-            }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(MessageKind.entries.filter { it != MessageKind.TEXT }) { kind ->
-                    Button(onClick = { onSendMediaMessage(kind) }) {
-                        Text(kind.toActionLabel())
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(MessageKind.entries.filter { it != MessageKind.TEXT }) { kind ->
+                        Button(onClick = { onSendMediaMessage(kind) }) {
+                            Text(kind.toActionLabel())
+                        }
                     }
+                }
+                Button(onClick = onSendTextMessage) {
+                    Text("发送")
                 }
             }
         }
@@ -429,19 +254,15 @@ private fun MessageBoard(
 @Composable
 private fun MessageBubble(message: ChatMessage) {
     val isSelf = message.authorRole == AuthorRole.SELF
-    val containerColor = if (isSelf) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start
     ) {
         Card(
             modifier = Modifier.widthIn(max = 320.dp),
-            colors = CardDefaults.cardColors(containerColor = containerColor),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isSelf) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+            ),
             shape = RoundedCornerShape(
                 topStart = 24.dp,
                 topEnd = 24.dp,
@@ -497,26 +318,9 @@ private fun MessageBody(message: ChatMessage) {
             )
         }
 
-        MessageKind.IMAGE -> MediaPreviewCard(
-            title = "图片消息",
-            subtitle = message.body,
-            accent = SkyBlue,
-            lines = listOf("等待真实 attachmentUrl", "支持缩略图 / 原图 / 下载进度")
-        )
-
-        MessageKind.AUDIO -> MediaPreviewCard(
-            title = "语音消息",
-            subtitle = message.body,
-            accent = Aqua,
-            lines = listOf("时长、波形和播放状态待接后端", "后续补已听回执")
-        )
-
-        MessageKind.VIDEO -> MediaPreviewCard(
-            title = "视频消息",
-            subtitle = message.body,
-            accent = Coral,
-            lines = listOf("视频封面、时长、上传状态已预留", "支持点击进入全屏播放器")
-        )
+        MessageKind.IMAGE -> MediaPreviewCard("图片", message.body, SkyBlue)
+        MessageKind.AUDIO -> MediaPreviewCard("语音", message.body, Aqua)
+        MessageKind.VIDEO -> MediaPreviewCard("视频", message.body, Coral)
     }
 }
 
@@ -524,8 +328,7 @@ private fun MessageBody(message: ChatMessage) {
 private fun MediaPreviewCard(
     title: String,
     subtitle: String,
-    accent: Color,
-    lines: List<String>
+    accent: Color
 ) {
     Surface(
         color = accent.copy(alpha = 0.12f),
@@ -538,8 +341,7 @@ private fun MediaPreviewCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(88.dp)
-                    .background(accent.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                    .height(80.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -550,15 +352,8 @@ private fun MediaPreviewCard(
             }
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyMedium
             )
-            lines.forEach { line ->
-                Text(
-                    text = line,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }
@@ -569,16 +364,13 @@ private fun ConversationCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(24.dp)
     ) {
         Row(
@@ -592,12 +384,11 @@ private fun ConversationCard(
             )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = conversation.title,
@@ -610,25 +401,9 @@ private fun ConversationCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusChip(
-                        text = if (conversation.isGroup) "群聊" else "单聊",
-                        accent = if (conversation.isGroup) Coral else Aqua
-                    )
-                    StatusChip(
-                        text = conversation.kind.toChineseLabel(),
-                        accent = SkyBlue
-                    )
-                    ReadinessChip(status = conversation.integrationStatus)
-                }
                 Text(
                     text = conversation.preview,
                     style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = "路由 ${conversation.routingKey}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (conversation.unreadCount > 0) {
@@ -656,7 +431,7 @@ internal fun SectionHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp, bottom = 4.dp),
+            .padding(top = 4.dp, bottom = 4.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
@@ -678,10 +453,8 @@ internal fun HighlightPanel(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        shape = RoundedCornerShape(26.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -722,9 +495,9 @@ private fun MessageDeliveryStatus.toChineseLabel(): String {
 
 private fun MessageKind.toActionLabel(): String {
     return when (this) {
-        MessageKind.TEXT -> "发送文本"
-        MessageKind.IMAGE -> "发送图片"
-        MessageKind.AUDIO -> "发送语音"
-        MessageKind.VIDEO -> "发送视频"
+        MessageKind.TEXT -> "文本"
+        MessageKind.IMAGE -> "图片"
+        MessageKind.AUDIO -> "语音"
+        MessageKind.VIDEO -> "视频"
     }
 }

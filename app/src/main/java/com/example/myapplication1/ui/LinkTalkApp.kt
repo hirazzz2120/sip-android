@@ -1,15 +1,11 @@
 package com.example.myapplication1.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -22,9 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -39,10 +35,7 @@ import com.example.myapplication1.ui.screens.CallsScreen
 import com.example.myapplication1.ui.screens.ContactsScreen
 import com.example.myapplication1.ui.screens.LoginScreen
 import com.example.myapplication1.ui.screens.SessionsScreen
-import com.example.myapplication1.ui.theme.Aqua
-import com.example.myapplication1.ui.theme.Coral
 import com.example.myapplication1.ui.theme.SkyBlue
-import com.example.myapplication1.ui.theme.SlateBlue
 
 @Composable
 fun LinkTalkApp(
@@ -71,8 +64,8 @@ fun LinkTalkApp(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             WorkspaceTopBar(
-                state = state,
-                destination = currentAppDestination
+                title = currentAppDestination.label,
+                subtitle = state.profile?.currentUserName ?: "安卓终端"
             )
         },
         bottomBar = {
@@ -91,11 +84,10 @@ fun LinkTalkApp(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .systemBarsPadding()
         ) {
             NavHost(
                 navController = navController,
@@ -127,144 +119,97 @@ fun LinkTalkApp(
 
 @Composable
 private fun WorkspaceTopBar(
-    state: AppUiState,
-    destination: AppDestination
+    title: String,
+    subtitle: String
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(28.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            SlateBlue.copy(alpha = 0.98f),
-                            SkyBlue.copy(alpha = 0.92f),
-                            Aqua.copy(alpha = 0.88f)
-                        )
-                    )
-                )
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            androidx.compose.foundation.layout.Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "联聊工作区",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = destination.label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-                Surface(
-                    color = Coral.copy(alpha = 0.18f),
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Text(
-                        text = state.profile?.releaseStage ?: "未初始化",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            Surface(
+                color = SkyBlue.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                WorkspaceMeta(label = "当前用户", value = state.profile?.currentUserName ?: "安卓终端")
-                WorkspaceMeta(label = "SIP", value = state.profile?.sipAccount ?: "未配置")
-                WorkspaceMeta(label = "环境", value = state.profile?.environmentLabel ?: "本地环境")
+                Text(
+                    text = "在线",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = SkyBlue
+                )
             }
         }
     }
 }
 
 @Composable
-private fun RowScope.WorkspaceMeta(
-    label: String,
-    value: String
-) {
-    Column(
-        modifier = Modifier.weight(1f),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onPrimary
-        )
-    }
-}
-
-@Composable
 private fun WorkspaceBottomBar(
     destinations: List<AppDestination>,
-    currentDestination: androidx.navigation.NavDestination?,
+    currentDestination: NavDestination?,
     onNavigate: (String) -> Unit
 ) {
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp)
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(26.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                destinations.forEach { destination ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = { onNavigate(destination.route) },
-                        alwaysShowLabel = true,
-                        icon = {
-                            Surface(
-                                color = if (selected) SkyBlue.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Text(
-                                    text = destination.marker,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (selected) SkyBlue else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        },
-                        label = {
+            destinations.forEach { destination ->
+                val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                NavigationBarItem(
+                    selected = selected,
+                    onClick = { onNavigate(destination.route) },
+                    alwaysShowLabel = true,
+                    icon = {
+                        Surface(
+                            color = if (selected) SkyBlue.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
                             Text(
-                                text = destination.label,
-                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                                text = destination.marker,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (selected) SkyBlue else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    )
-                }
+                    },
+                    label = {
+                        Text(
+                            text = destination.label,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                    }
+                )
             }
         }
     }
