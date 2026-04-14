@@ -5,16 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.myapplication1"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.myapplication1"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -46,11 +42,13 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-
-    // 🚨 救命零件：刚才被我不小心删掉的导航组件，补在这里！
     implementation(libs.androidx.navigation.compose)
 
-    // SIP 核心库
+    // 🌐 Retrofit & Gson (用于对接 PC 端 Spring Boot 后台)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    
+    // SIP 核心库 (虽然我们现在手写 UDP，但保留它用于 SDP 解析参考)
     implementation("javax.sip:jain-sip-ri:1.3.0-91")
 
     testImplementation(libs.junit)
